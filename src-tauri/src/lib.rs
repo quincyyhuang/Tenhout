@@ -1,5 +1,5 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-use appdata::AppData;
+use appdata::{AppData, TENHOU_URLS};
 use std::sync::Mutex;
 use tauri::menu::{Menu, MenuItem, SubmenuBuilder};
 use tauri::Manager;
@@ -75,23 +75,34 @@ pub fn run() {
             // Set up app menu
             let app_menu = Menu::new(app)?;
             let submenu = SubmenuBuilder::new(app, "Tenhout")
-                .item(&MenuItem::new(
+                .item(&MenuItem::with_id(
                     app,
+                    "tenhou-4k",
                     "Tenhou Web 4k",
                     true,
                     Some("CommandOrControl+1"),
                 )?)
-                .item(&MenuItem::new(
+                .item(&MenuItem::with_id(
                     app,
+                    "tenhou-old",
                     "Tenhou Web Old",
                     true,
                     Some("CommandOrControl+2"),
                 )?)
-                .item(&MenuItem::new(
+                .item(&MenuItem::with_id(
                     app,
+                    "tenhou-pairi",
                     "Tenhou Pairi",
                     true,
                     Some("CommandOrControl+3"),
+                )?)
+                .separator()
+                .item(&MenuItem::with_id(
+                    app,
+                    "clear-cache",
+                    "Clear all cache",
+                    true,
+                    Some("CommandOrControl+Shift+C"),
                 )?)
                 .separator()
                 .quit()
@@ -102,6 +113,42 @@ pub fn run() {
             // Show window
             webview_window.show()?;
             Ok(())
+        })
+        .on_menu_event(|app, event| match event.id().0.as_str() {
+            "tenhou-4k" => {
+                let url = tauri::Url::parse(TENHOU_URLS[2]).unwrap();
+                if let Some(main_window) = app.get_webview_window("main") {
+                    let _ = main_window.navigate(url);
+                }
+            }
+            "tenhou-old" => {
+                let url = tauri::Url::parse(TENHOU_URLS[1]).unwrap();
+                if let Some(main_window) = app.get_webview_window("main") {
+                    let _ = main_window.navigate(url);
+                }
+            }
+            "tenhou-pairi" => {
+                let url = tauri::Url::parse(TENHOU_URLS[0]).unwrap();
+                if let Ok(pairi_window) =
+                    tauri::WebviewWindowBuilder::new(app, "pairi", tauri::WebviewUrl::External(url))
+                        .build()
+                {
+                    let _ = pairi_window.set_size(tauri::LogicalSize {
+                        width: 400,
+                        height: 600,
+                    });
+                    let _ = pairi_window.set_title("Tenhout - Pairi");
+                    let _ = pairi_window.show();
+                }
+            }
+            "clear-cache" => {
+                if let Some(main_window) = app.get_webview_window("main") {
+                    let _ = main_window.clear_all_browsing_data();
+                    // Reload after clearing cache
+                    let _ = main_window.eval("window.location.reload()");
+                }
+            }
+            _ => {}
         })
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_opener::init())

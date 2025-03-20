@@ -1,7 +1,13 @@
-# Tauri + Vanilla
+# Tenhout
 
-This template should help get you started developing with Tauri in vanilla HTML, CSS and Javascript.
+Tenhout is a tenhou client built with Tauri.
 
-## Recommended IDE Setup
+## Development
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+After installing necessary dependencies, run `npm run tauri dev` to start the app in development mode.
+
+## Build
+
+Run `npm run tauri build -- --no-bundle` to build the app.
+
+Run `npm run tauri bundle -- --bundles app` to build the app and bundle as MacOS app.
