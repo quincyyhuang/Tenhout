@@ -1,6 +1,7 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 use appdata::AppData;
 use std::sync::Mutex;
+use tauri::menu::{Menu, MenuItem, SubmenuBuilder};
 use tauri::Manager;
 mod appdata;
 
@@ -70,6 +71,33 @@ pub fn run() {
                     _ => {}
                 }
             });
+
+            // Set up app menu
+            let app_menu = Menu::new(app)?;
+            let submenu = SubmenuBuilder::new(app, "Tenhout")
+                .item(&MenuItem::new(
+                    app,
+                    "Tenhou Web 4k",
+                    true,
+                    Some("CommandOrControl+1"),
+                )?)
+                .item(&MenuItem::new(
+                    app,
+                    "Tenhou Web Old",
+                    true,
+                    Some("CommandOrControl+2"),
+                )?)
+                .item(&MenuItem::new(
+                    app,
+                    "Tenhou Pairi",
+                    true,
+                    Some("CommandOrControl+3"),
+                )?)
+                .separator()
+                .quit()
+                .build()?;
+            app_menu.append(&submenu)?;
+            let _ = app.set_menu(app_menu);
 
             // Show window
             webview_window.show()?;
