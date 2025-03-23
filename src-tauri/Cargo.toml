@@ -1,6 +1,6 @@
 [package]
 name = "Tenhout"
-version = "0.1.0"
+version = "0.2.0"
 description = "A tenhou standalone app built with Tauri"
 authors = ["Quincy"]
 edition = "2021"
