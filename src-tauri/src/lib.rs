@@ -1,5 +1,5 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-use appdata::{AppData, TENHOU_URLS};
+use appdata::{get_subtitle, AppData, TENHOU_URLS};
 use std::sync::Mutex;
 use tauri::menu::{Menu, MenuItem, SubmenuBuilder};
 use tauri::Manager;
@@ -28,6 +28,9 @@ pub fn run() {
 
             let url = tauri::Url::parse(&app_settings.main_page_url).unwrap();
 
+            // Make window subtitle
+            let subtitle = get_subtitle(&url.as_str());
+
             // Handle window initialization
             let webview_window =
                 tauri::WebviewWindowBuilder::new(app, "main", tauri::WebviewUrl::External(url))
@@ -37,7 +40,7 @@ pub fn run() {
                 width: app_settings.window_width.clone(),
                 height: app_settings.window_height.clone(),
             })?;
-            webview_window.set_title("Tenhout")?;
+            webview_window.set_title(format!("Tenhout - {subtitle}").as_str())?;
 
             // Set up app state management
             let app_settings = Mutex::new(app_settings);
@@ -78,14 +81,14 @@ pub fn run() {
                 .item(&MenuItem::with_id(
                     app,
                     "tenhou-4k",
-                    "Tenhou Web 4k",
+                    "Tenhou Web 4K",
                     true,
                     Some("CommandOrControl+1"),
                 )?)
                 .item(&MenuItem::with_id(
                     app,
                     "tenhou-old",
-                    "Tenhou Web Old",
+                    "Tenhou Web",
                     true,
                     Some("CommandOrControl+2"),
                 )?)
@@ -99,15 +102,40 @@ pub fn run() {
                 .separator()
                 .item(&MenuItem::with_id(
                     app,
+                    "ron2",
+                    "Ron2",
+                    true,
+                    Some("CommandOrControl+4"),
+                )?)
+                .separator()
+                .item(&MenuItem::with_id(
+                    app,
+                    "join-lobby",
+                    "Join Lobby",
+                    true,
+                    Some("CommandOrControl+J"),
+                )?)
+                .separator()
+                .item(&MenuItem::with_id(
+                    app,
                     "clear-cache",
-                    "Clear all cache",
+                    "Clear All Cache",
                     true,
                     Some("CommandOrControl+Shift+C"),
                 )?)
                 .separator()
                 .quit()
                 .build()?;
+
+            let file_submenu = SubmenuBuilder::new(app, "File")
+                .cut()
+                .copy()
+                .paste()
+                .select_all()
+                .build()?;
+
             app_menu.append(&submenu)?;
+            app_menu.append(&file_submenu)?;
             let _ = app.set_menu(app_menu);
 
             // Show window
@@ -117,14 +145,30 @@ pub fn run() {
         .on_menu_event(|app, event| match event.id().0.as_str() {
             "tenhou-4k" => {
                 let url = tauri::Url::parse(TENHOU_URLS[2]).unwrap();
+
+                // Save the URL in appdata
+                let app_settings = app.state::<Mutex<AppData>>();
+                let mut app_settings = app_settings.lock().unwrap();
+                app_settings.main_page_url = url.as_str().to_owned();
+
                 if let Some(main_window) = app.get_webview_window("main") {
-                    let _ = main_window.navigate(url);
+                    let _ = main_window.navigate(url.clone());
+                    let subtitle = get_subtitle(&url.as_str());
+                    let _ = main_window.set_title(format!("Tenhou - {subtitle}").as_str());
                 }
             }
             "tenhou-old" => {
                 let url = tauri::Url::parse(TENHOU_URLS[1]).unwrap();
+
+                // Save the URL in appdata
+                let app_settings = app.state::<Mutex<AppData>>();
+                let mut app_settings = app_settings.lock().unwrap();
+                app_settings.main_page_url = url.as_str().to_owned();
+
                 if let Some(main_window) = app.get_webview_window("main") {
-                    let _ = main_window.navigate(url);
+                    let _ = main_window.navigate(url.clone());
+                    let subtitle = get_subtitle(&url.as_str());
+                    let _ = main_window.set_title(format!("Tenhou - {subtitle}").as_str());
                 }
             }
             "tenhou-pairi" => {
@@ -139,6 +183,33 @@ pub fn run() {
                     });
                     let _ = pairi_window.set_title("Tenhout - Pairi");
                     let _ = pairi_window.show();
+                }
+            }
+            "ron2" => {
+                let url = tauri::Url::parse(TENHOU_URLS[3]).unwrap();
+
+                // Save the URL in appdata
+                let app_settings = app.state::<Mutex<AppData>>();
+                let mut app_settings = app_settings.lock().unwrap();
+                app_settings.main_page_url = url.as_str().to_owned();
+
+                if let Some(main_window) = app.get_webview_window("main") {
+                    let _ = main_window.navigate(url.clone());
+                    let subtitle = get_subtitle(&url.as_str());
+                    let _ = main_window.set_title(format!("Tenhou - {subtitle}").as_str());
+                }
+            }
+            "join-lobby" => {
+                if let Some(main_window) = app.get_webview_window("main") {
+                    // Load join-lobby.js and evaluate it
+                    let join_lobby_js = app
+                        .asset_resolver()
+                        .get("join-lobby.js".to_owned())
+                        .expect("join-lobby.js file does not exist");
+                    let join_lobby_js = String::from_utf8(join_lobby_js.bytes)
+                        .expect("join-lobby.js file incorrect");
+                    // main_window.open_devtools();
+                    let _ = main_window.eval(join_lobby_js.as_str());
                 }
             }
             "clear-cache" => {
