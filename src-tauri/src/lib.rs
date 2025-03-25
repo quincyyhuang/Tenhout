@@ -201,13 +201,16 @@ pub fn run() {
             }
             "join-lobby" => {
                 if let Some(main_window) = app.get_webview_window("main") {
-                    // Load join-lobby.js and evaluate it
-                    let join_lobby_js = app
-                        .asset_resolver()
-                        .get("join-lobby.js".to_owned())
+                    // Load join-lobby.js from resource directory and evaluate it
+                    let resource_path = app
+                        .path()
+                        .resolve(
+                            "plugins/join-lobby.js",
+                            tauri::path::BaseDirectory::Resource,
+                        )
                         .expect("join-lobby.js file does not exist");
-                    let join_lobby_js = String::from_utf8(join_lobby_js.bytes)
-                        .expect("join-lobby.js file incorrect");
+                    let join_lobby_js = std::fs::read_to_string(&resource_path)
+                        .expect("Failed to read join-lobby.js");
                     // main_window.open_devtools();
                     let _ = main_window.eval(join_lobby_js.as_str());
                 }
